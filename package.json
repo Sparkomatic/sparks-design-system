@@ -1,0 +1,11 @@
+{
+  "name": "sparks-design-system",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Sparks Design System — token-driven React components, CLI-distributed like shadcn",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build:cli": "npm run build --workspace=packages/cli",
+    "dev:cli": "npm run dev --workspace=packages/cli"
+  }
+}

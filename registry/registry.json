@@ -1,0 +1,21 @@
+{
+  "$schema": "https://sparks-ds.dev/registry-schema.json",
+  "version": "0.0.1",
+  "components": [
+    {
+      "name": "button",
+      "description": "A button with variants (default, outline, ghost, destructive, link), sizes (sm/md/lg/xl), loading state, icon slots, and full token control via CSS custom properties.",
+      "files": [
+        "button.tsx",
+        "button.css"
+      ],
+      "dependencies": [
+        "@radix-ui/react-slot"
+      ],
+      "tokens": [
+        "tokens/global.css",
+        "tokens/semantic.css"
+      ]
+    }
+  ]
+}

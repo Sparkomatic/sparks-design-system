@@ -1,0 +1,253 @@
+/* =============================================================================
+   Sparks Design System — Button Component Tokens
+
+   Every visual property is a CSS custom property.
+   To restyle buttons in your project, override any of these variables at:
+     • :root                   — changes all buttons globally
+     • .sds-button             — same, lower specificity
+     • a parent selector       — scoped overrides
+     • the element with style= — per-instance overrides
+
+   No Tailwind. No inline styles baked into the component.
+   Just CSS custom properties, all the way down.
+   ============================================================================= */
+
+/* ── Component token defaults ───────────────────────────────────────────────
+   These are the "knobs" you tweak to restyle. They cascade normally, so you
+   only need to override the ones you actually want to change.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.sds-button {
+
+  /* Layout */
+  --button-height:       2.5rem;       /* 40px (md) */
+  --button-padding-x:   var(--space-4);
+  --button-padding-y:   0px;
+  --button-gap:         var(--space-2);
+  --button-radius:      var(--radius-md);
+  --button-border-width: 1px;
+
+  /* Typography */
+  --button-font-family:    var(--font-sans);
+  --button-font-size:      var(--font-size-sm);
+  --button-font-weight:    var(--font-weight-medium);
+  --button-line-height:    1;
+  --button-letter-spacing: var(--letter-spacing-wide);
+
+  /* Colours — default variant (solid brand fill) */
+  --button-bg:                var(--color-brand);
+  --button-bg-hover:          var(--color-brand-hover);
+  --button-bg-active:         var(--color-brand-active);
+  --button-fg:                var(--color-brand-foreground);
+  --button-border-color:      transparent;
+  --button-border-color-hover: transparent;
+
+  /* Disabled */
+  --button-bg-disabled:   var(--color-disabled-bg);
+  --button-fg-disabled:   var(--color-disabled-fg);
+
+  /* Icon */
+  --button-icon-size: 1rem;
+
+  /* Transition */
+  --button-transition-duration: var(--duration-normal);
+  --button-transition-easing:   var(--easing-default);
+}
+
+
+/* ── Base element styles ─────────────────────────────────────────────────────
+   Built on the token values above. These rarely need overriding directly.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.sds-button {
+  /* Layout */
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--button-gap);
+  height:          var(--button-height);
+  padding-left:    var(--button-padding-x);
+  padding-right:   var(--button-padding-x);
+  padding-top:     var(--button-padding-y);
+  padding-bottom:  var(--button-padding-y);
+
+  /* Shape */
+  border-radius: var(--button-radius);
+  border:        var(--button-border-width) solid var(--button-border-color);
+
+  /* Colour */
+  background-color: var(--button-bg);
+  color:            var(--button-fg);
+
+  /* Typography */
+  font-family:     var(--button-font-family);
+  font-size:       var(--button-font-size);
+  font-weight:     var(--button-font-weight);
+  line-height:     var(--button-line-height);
+  letter-spacing:  var(--button-letter-spacing);
+  text-decoration: none;
+  white-space:     nowrap;
+
+  /* Behaviour */
+  cursor:      pointer;
+  outline:     none;
+  position:    relative;
+  user-select: none;
+  flex-shrink: 0;
+
+  /* Transitions */
+  transition-property: background-color, color, border-color, box-shadow, opacity;
+  transition-duration: var(--button-transition-duration);
+  transition-timing-function: var(--button-transition-easing);
+}
+
+/* ── Interaction states ───────────────────────────────────────────────────── */
+
+.sds-button:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--button-bg-hover);
+  border-color:     var(--button-border-color-hover);
+}
+
+.sds-button:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--button-bg-active);
+}
+
+.sds-button:focus-visible {
+  box-shadow:
+    0 0 0 var(--focus-ring-offset) var(--color-surface),
+    0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--focus-ring-color);
+}
+
+/* ── Disabled ─────────────────────────────────────────────────────────────── */
+
+.sds-button:disabled,
+.sds-button[aria-disabled="true"] {
+  background-color: var(--button-bg-disabled);
+  color:            var(--button-fg-disabled);
+  border-color:     transparent;
+  cursor:           not-allowed;
+  pointer-events:   none;
+}
+
+
+/* ── Variants ─────────────────────────────────────────────────────────────── */
+/* Each variant overrides only the colour tokens. Layout tokens are inherited. */
+
+/* outline */
+.sds-button[data-variant="outline"] {
+  --button-bg:                transparent;
+  --button-bg-hover:          var(--color-brand-subtle);
+  --button-bg-active:         var(--color-brand-muted);
+  --button-fg:                var(--color-brand);
+  --button-border-color:      var(--color-brand);
+  --button-border-color-hover: var(--color-brand);
+}
+
+/* ghost */
+.sds-button[data-variant="ghost"] {
+  --button-bg:           transparent;
+  --button-bg-hover:     var(--color-surface-muted);
+  --button-bg-active:    var(--color-surface-muted);
+  --button-fg:           var(--color-text);
+  --button-border-color: transparent;
+}
+
+/* destructive */
+.sds-button[data-variant="destructive"] {
+  --button-bg:       var(--color-destructive);
+  --button-bg-hover: var(--color-destructive-hover);
+  --button-bg-active: var(--color-destructive-active);
+  --button-fg:       var(--color-destructive-foreground);
+}
+
+/* destructive + outline */
+.sds-button[data-variant="destructive-outline"] {
+  --button-bg:                transparent;
+  --button-bg-hover:          var(--color-destructive-subtle);
+  --button-fg:                var(--color-destructive);
+  --button-border-color:      var(--color-destructive);
+  --button-border-color-hover: var(--color-destructive);
+}
+
+/* link — text-only, no box */
+.sds-button[data-variant="link"] {
+  --button-bg:           transparent;
+  --button-bg-hover:     transparent;
+  --button-bg-active:    transparent;
+  --button-fg:           var(--color-text-brand);
+  --button-border-color: transparent;
+  --button-height:       auto;
+  --button-padding-x:    0px;
+  --button-padding-y:    0px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sds-button[data-variant="link"]:disabled,
+.sds-button[data-variant="link"][aria-disabled="true"] {
+  text-decoration: none;
+}
+
+
+/* ── Sizes ────────────────────────────────────────────────────────────────── */
+
+/* sm — 32px high */
+.sds-button[data-size="sm"] {
+  --button-height:       2rem;
+  --button-padding-x:   var(--space-3);
+  --button-font-size:   var(--font-size-xs);
+  --button-radius:      var(--radius-sm);
+  --button-icon-size:   0.875rem;
+}
+
+/* md — 40px high (default, already set above) */
+
+/* lg — 48px high */
+.sds-button[data-size="lg"] {
+  --button-height:       3rem;
+  --button-padding-x:   var(--space-6);
+  --button-font-size:   var(--font-size-md);
+  --button-radius:      var(--radius-lg);
+  --button-icon-size:   1.125rem;
+}
+
+/* xl — 56px high */
+.sds-button[data-size="xl"] {
+  --button-height:       3.5rem;
+  --button-padding-x:   var(--space-8);
+  --button-font-size:   var(--font-size-lg);
+  --button-radius:      var(--radius-xl);
+  --button-gap:         var(--space-3);
+  --button-icon-size:   1.25rem;
+}
+
+
+/* ── Icon-only (square button) ────────────────────────────────────────────── */
+
+.sds-button[data-icon-only="true"] {
+  --button-padding-x: 0px;
+  width: var(--button-height);
+}
+
+
+/* ── Loading state ────────────────────────────────────────────────────────── */
+
+.sds-button[data-loading="true"] {
+  cursor:         wait;
+  pointer-events: none;
+}
+
+
+/* ── Icon sizing ──────────────────────────────────────────────────────────── */
+
+.sds-button svg {
+  width:      var(--button-icon-size);
+  height:     var(--button-icon-size);
+  flex-shrink: 0;
+}
+
+
+/* ── Full-width modifier ──────────────────────────────────────────────────── */
+
+.sds-button[data-full-width="true"] {
+  width: 100%;
+}
