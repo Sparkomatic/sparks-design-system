@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "fileKey": "OzEZwWy8CQFot6GcTVeg8f",
+    "fileName": "Sparks Design System 2026",
+    "syncedAt": "2026-03-09T23:26:59.577Z",
+    "figmaLastModified": "2026-02-12T14:56:58Z"
+  },
+  "variables": [],
+  "componentSets": [
+    {
+      "name": "Button",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 0
+    },
+    {
+      "name": "Background Brand",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Icons / Chevron / Left",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Icons / Chevron / Right",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Secondary, State=Default",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Tertiary, State=Default",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Utility, State=Hover",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Utility, State=Disabled",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance = Primary, State=Hover",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Tertiary, State=Disabled",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance = Primary, State=Disabled",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Secondary, State=Hover",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Tertiary, State=Hover",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Utility, State=Default",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Secondary, State=Disabled",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    },
+    {
+      "name": "Appearance=Primary, State=Default",
+      "description": "",
+      "variantProperties": {},
+      "componentCount": 1
+    }
+  ],
+  "styles": [
+    {
+      "name": "Label/Medium",
+      "description": ""
+    }
+  ]
+}
