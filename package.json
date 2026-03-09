@@ -6,6 +6,7 @@
   "workspaces": ["packages/*"],
   "scripts": {
     "build:cli": "npm run build --workspace=packages/cli",
-    "dev:cli": "npm run dev --workspace=packages/cli"
+    "dev:cli": "npm run dev --workspace=packages/cli",
+    "sync-figma": "source ~/.zshrc 2>/dev/null && source ~/.nvm/nvm.sh && npx tsx scripts/sync-figma.ts"
   }
 }
