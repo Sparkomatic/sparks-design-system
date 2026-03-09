@@ -1,12 +1,10 @@
 # Sparks Design System
 
-A token-driven React component library for the Sparks Design System.
+*Personal design system library, starter kit, and matching code component library — currently in early development. Intended for independent commercial sale.*
 
-Distributed like [shadcn/ui](https://ui.shadcn.com/) — instead of installing an npm package, you use a CLI to copy component source files directly into your project. You own the code. No black boxes.
+A Figma-based design system and commercial starter kit comprising Figma UI components with a matching coded component library. The code library is CLI-distributed (like [shadcn/ui](https://ui.shadcn.com/)) — consumers copy component source into their project rather than installing an npm package. You own the code. No black boxes.
 
-Unlike shadcn, this system has **no Tailwind dependency**. All styling is done with CSS custom properties (design tokens), so you can completely restyle any component by overriding variables — no CSS specificity battles, no utility class purging, no framework coupling.
-
-Accessibility primitives are handled by [Radix UI](https://www.radix-ui.com/).
+All styling is CSS custom properties with no Tailwind dependency — restyle any component completely by overriding variables, with no specificity battles or framework coupling. Accessibility is handled by [Radix UI](https://www.radix-ui.com/) primitives.
 
 ---
 
