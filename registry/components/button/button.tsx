@@ -5,9 +5,12 @@ import './button.css';
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type ButtonVariant =
-  | 'default'
-  | 'outline'
-  | 'ghost'
+  // ── Figma: Appearance property ──────────────────────────────────────────
+  | 'primary'            // Appearance=Primary  — solid brand fill
+  | 'secondary'          // Appearance=Secondary — brand outline
+  | 'tertiary'           // Appearance=Tertiary  — no background or border
+  | 'utility'            // Appearance=Utility   — neutral gray, for UI chrome
+  // ── Code-only extensions (not yet in Figma) ──────────────────────────────
   | 'destructive'
   | 'destructive-outline'
   | 'link';
@@ -16,8 +19,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
-   * Visual style variant.
-   * @default 'default'
+   * Visual style variant. Matches Figma's Appearance property.
+   * @default 'primary'
    */
   variant?: ButtonVariant;
 
@@ -71,7 +74,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
-      variant = 'default',
+      variant = 'primary',
       size = 'md',
       asChild = false,
       loading = false,
@@ -95,7 +98,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={['sds-button', className].filter(Boolean).join(' ')}
         // data-* attributes drive CSS variant/size/state selectors in button.css
-        data-variant={variant !== 'default' ? variant : undefined}
+        data-variant={variant !== 'primary' ? variant : undefined}
         data-size={size !== 'md' ? size : undefined}
         data-loading={loading || undefined}
         data-icon-only={iconOnly || undefined}

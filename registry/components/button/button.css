@@ -34,7 +34,7 @@
   --button-line-height:    1;
   --button-letter-spacing: var(--letter-spacing-wide);
 
-  /* Colours — default variant (solid brand fill) */
+  /* Colours — primary variant (solid brand fill) */
   --button-bg:                var(--color-brand);
   --button-bg-hover:          var(--color-brand-hover);
   --button-bg-active:         var(--color-brand-active);
@@ -131,10 +131,12 @@
 
 
 /* ── Variants ─────────────────────────────────────────────────────────────── */
-/* Each variant overrides only the colour tokens. Layout tokens are inherited. */
+/* Matches Figma's Appearance property: primary / secondary / tertiary / utility */
+/* destructive, destructive-outline, link are code-only extensions.             */
+/* Each variant overrides only the colour tokens. Layout tokens are inherited.  */
 
-/* outline */
-.sds-button[data-variant="outline"] {
+/* secondary — brand outline (Figma: Appearance=Secondary) */
+.sds-button[data-variant="secondary"] {
   --button-bg:                transparent;
   --button-bg-hover:          var(--color-brand-subtle);
   --button-bg-active:         var(--color-brand-muted);
@@ -143,13 +145,23 @@
   --button-border-color-hover: var(--color-brand);
 }
 
-/* ghost */
-.sds-button[data-variant="ghost"] {
+/* tertiary — no background or border (Figma: Appearance=Tertiary) */
+.sds-button[data-variant="tertiary"] {
   --button-bg:           transparent;
   --button-bg-hover:     var(--color-surface-muted);
   --button-bg-active:    var(--color-surface-muted);
   --button-fg:           var(--color-text);
   --button-border-color: transparent;
+}
+
+/* utility — neutral gray, for UI chrome actions (Figma: Appearance=Utility) */
+.sds-button[data-variant="utility"] {
+  --button-bg:                var(--color-surface-muted);
+  --button-bg-hover:          var(--color-border);
+  --button-bg-active:         var(--color-border-strong);
+  --button-fg:                var(--color-text);
+  --button-border-color:      var(--color-border);
+  --button-border-color-hover: var(--color-border-strong);
 }
 
 /* destructive */

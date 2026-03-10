@@ -2,18 +2,25 @@
 /**
  * scripts/sync-figma.ts
  *
- * Pulls variables, components, and styles from the Figma REST API and writes
+ * Pulls variables, components, and styles from Figma and writes
  * design/figma-manifest.json — a committed snapshot used for design–code parity.
  *
  * Design leads. This script only reads from Figma — it never writes back.
  *
  * Usage:
- *   npm run sync-figma
+ *   npx tsx scripts/sync-figma.ts
+ *   npx tsx scripts/sync-figma.ts --variables path/to/exported-variables.json
+ *
+ * --variables <file>
+ *   Path to a JSON file exported from the Figma variables plugin
+ *   (claude-figma-variables-and-styles-plugin → Export button).
+ *   Use this to populate variables for free — the REST API variables
+ *   endpoint requires a paid Figma plan, but the plugin API does not.
+ *   When this flag is provided, plugin variables take precedence over
+ *   any variables returned by the REST API.
  *
  * Required env var (add to ~/.zshrc):
  *   export FIGMA_API_TOKEN=your_personal_access_token
- *
- * Get a token at: Figma → account settings → Personal access tokens → Generate new token
  *
  * Optional env var (falls back to the hardcoded default):
  *   export FIGMA_FILE_KEY=OzEZwWy8CQFot6GcTVeg8f
@@ -27,14 +34,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const ROOT       = path.resolve(__dirname, '..');
 
-// ── Config ─────────────────────────────────────────────────────────────────
+// ── CLI args ────────────────────────────────────────────────────────────────
+
+const args = process.argv.slice(2);
+const variablesFileArg = (() => {
+  const idx = args.indexOf('--variables');
+  return idx !== -1 ? args[idx + 1] : undefined;
+})();
+
+// ── Config ──────────────────────────────────────────────────────────────────
 
 const FILE_KEY  = process.env.FIGMA_FILE_KEY  ?? 'OzEZwWy8CQFot6GcTVeg8f';
 const API_TOKEN = process.env.FIGMA_API_TOKEN ?? '';
 const BASE_URL  = 'https://api.figma.com';
 const OUT_PATH  = path.join(ROOT, 'design', 'figma-manifest.json');
 
-// ── Figma API types ─────────────────────────────────────────────────────────
+// ── Figma REST API types ─────────────────────────────────────────────────────
 
 interface FigmaColor { r: number; g: number; b: number; a: number; }
 interface FigmaVariableAlias { type: 'VARIABLE_ALIAS'; id: string; }
@@ -81,7 +96,35 @@ interface FigmaStyle {
   description: string;
 }
 
-// ── Manifest output types ───────────────────────────────────────────────────
+// ── Plugin export types (from claude-figma-variables-and-styles-plugin) ──────
+// Matches the ImportExportFile format the plugin writes when you click Export.
+
+interface PluginExportValue {
+  r?: number; g?: number; b?: number; a?: number; // COLOR
+  $alias?: string; collection?: string;            // alias reference
+}
+
+interface PluginExportVariable {
+  name:         string;
+  type:         'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN';
+  scopes:       string[];
+  description:  string;
+  valuesByMode: Record<string, number | boolean | string | PluginExportValue>;
+}
+
+interface PluginExportCollection {
+  name:      string;
+  modes:     string[];       // mode names (not IDs); first entry = default mode
+  variables: PluginExportVariable[];
+}
+
+interface PluginExportFile {
+  version:    number;
+  exportedAt: string;
+  collections: PluginExportCollection[];
+}
+
+// ── Manifest output types ────────────────────────────────────────────────────
 
 interface ManifestVariable {
   collection:   string;
@@ -112,13 +155,14 @@ interface FigmaManifest {
     fileName:          string;
     syncedAt:          string;
     figmaLastModified: string;
+    variablesSource:   'plugin-export' | 'rest-api' | 'none';
   };
   variables:     ManifestVariable[];
   componentSets: ManifestComponentSet[];
   styles:        ManifestStyle[];
 }
 
-// ── API helpers ─────────────────────────────────────────────────────────────
+// ── API helpers ──────────────────────────────────────────────────────────────
 
 async function figmaGet<T>(endpoint: string): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
@@ -134,7 +178,7 @@ async function figmaGet<T>(endpoint: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ── Transform helpers ───────────────────────────────────────────────────────
+// ── Transform helpers ────────────────────────────────────────────────────────
 
 function figmaColorToHex({ r, g, b, a }: FigmaColor): string {
   const ch = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
@@ -163,21 +207,61 @@ function toCssVar(name: string): string {
  */
 function parseVariantProps(componentName: string): Record<string, string> {
   const props: Record<string, string> = {};
-  const parts = componentName.split(',').map(p => p.trim());
-
-  for (const part of parts) {
+  for (const part of componentName.split(',').map(p => p.trim())) {
     const eqIdx = part.indexOf('=');
     if (eqIdx !== -1) {
-      const key = part.slice(0, eqIdx).trim();
-      const val = part.slice(eqIdx + 1).trim();
-      props[key] = val;
+      props[part.slice(0, eqIdx).trim()] = part.slice(eqIdx + 1).trim();
     }
   }
-
   return props;
 }
 
-// ── Main ────────────────────────────────────────────────────────────────────
+// ── Plugin export → manifest variables ──────────────────────────────────────
+
+/**
+ * Transforms the JSON exported by claude-figma-variables-and-styles-plugin
+ * into the ManifestVariable[] format used by figma-manifest.json.
+ *
+ * The plugin export uses mode names as keys and resolves aliases to
+ * { $alias, collection } objects. We convert those to the manifest's
+ * { aliasOf: "--css-var" } shape.
+ */
+function transformPluginExport(data: PluginExportFile): ManifestVariable[] {
+  const result: ManifestVariable[] = [];
+
+  for (const col of data.collections) {
+    const defaultMode = col.modes[0]; // first mode is the default
+    if (!defaultMode) continue;
+
+    for (const v of col.variables) {
+      const raw = v.valuesByMode[defaultMode];
+      if (raw === undefined) continue;
+
+      let value: ManifestVariable['value'];
+
+      if (v.type === 'COLOR' && raw !== null && typeof raw === 'object' && 'r' in raw) {
+        value = figmaColorToHex(raw as FigmaColor);
+      } else if (raw !== null && typeof raw === 'object' && '$alias' in raw) {
+        value = { aliasOf: toCssVar((raw as PluginExportValue).$alias ?? '') };
+      } else {
+        value = raw as string | number | boolean;
+      }
+
+      result.push({
+        collection:   col.name,
+        mode:         defaultMode,
+        name:         v.name,
+        cssVariable:  toCssVar(v.name),
+        resolvedType: v.type,
+        value,
+      });
+    }
+  }
+
+  return result;
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   // ── Validation ─────────────────────────────────────────────────────────
@@ -193,23 +277,48 @@ async function main() {
   }
 
   console.log('\n  Syncing from Figma…');
-  console.log(`  File: ${FILE_KEY}\n`);
+  console.log(`  File: ${FILE_KEY}`);
+  if (variablesFileArg) {
+    console.log(`  Variables: ${variablesFileArg} (plugin export)`);
+  }
+  console.log();
 
-  // ── Fetch in parallel ───────────────────────────────────────────────────
+  // ── Load plugin variables (if --variables flag provided) ────────────────
+
+  let pluginVariables: ManifestVariable[] | undefined;
+
+  if (variablesFileArg) {
+    const absPath = path.resolve(process.cwd(), variablesFileArg);
+    try {
+      const raw = await fs.readFile(absPath, 'utf-8');
+      const data = JSON.parse(raw) as PluginExportFile;
+      pluginVariables = transformPluginExport(data);
+      console.log(`  ✔  Loaded ${pluginVariables.length} variables from plugin export`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`\n✖  Could not read --variables file: ${msg}\n`);
+      process.exit(1);
+    }
+  }
+
+  // ── Fetch from REST API ─────────────────────────────────────────────────
 
   const [fileMeta, variablesRes, componentsRes, componentSetsRes, stylesRes] = await Promise.all([
     figmaGet<{ name: string; lastModified: string; version: string }>(
       `/v1/files/${FILE_KEY}?depth=1`
     ).catch(handleErr('file metadata')),
 
-    figmaGet<{
-      status: number;
-      meta: {
-        variables: Record<string, FigmaVariable>;
-        variableCollections: Record<string, FigmaVariableCollection>;
-      };
-    }>(`/v1/files/${FILE_KEY}/variables/local`)
-    .catch(handleErr('variables')),
+    // Only attempt REST variables if no plugin file was provided
+    pluginVariables
+      ? Promise.resolve(undefined)
+      : figmaGet<{
+          status: number;
+          meta: {
+            variables: Record<string, FigmaVariable>;
+            variableCollections: Record<string, FigmaVariableCollection>;
+          };
+        }>(`/v1/files/${FILE_KEY}/variables/local`)
+        .catch(handleErr('variables')),
 
     figmaGet<{ meta: { components: FigmaComponent[] } }>(
       `/v1/files/${FILE_KEY}/components`
@@ -227,12 +336,16 @@ async function main() {
   // ── Variables ───────────────────────────────────────────────────────────
 
   const manifestVariables: ManifestVariable[] = [];
-  let variableCount = 0;
+  let variablesSource: FigmaManifest['meta']['variablesSource'] = 'none';
 
-  if (variablesRes?.meta?.variables) {
+  if (pluginVariables) {
+    // Prefer plugin export — works on free plan
+    manifestVariables.push(...pluginVariables);
+    variablesSource = 'plugin-export';
+  } else if (variablesRes?.meta?.variables) {
+    // Fall back to REST API (requires paid plan)
     const { variables, variableCollections } = variablesRes.meta;
 
-    // Build an id → cssVar lookup for resolving aliases
     const idToCssVar: Record<string, string> = {};
     for (const v of Object.values(variables)) {
       idToCssVar[v.id] = toCssVar(v.name);
@@ -250,7 +363,6 @@ async function main() {
         let value: ManifestVariable['value'];
 
         if (rawValue && typeof rawValue === 'object' && 'type' in rawValue && rawValue.type === 'VARIABLE_ALIAS') {
-          // Alias — resolve to CSS var name
           value = { aliasOf: idToCssVar[rawValue.id] ?? rawValue.id };
         } else if (v.resolvedType === 'COLOR' && rawValue && typeof rawValue === 'object' && 'r' in rawValue) {
           value = figmaColorToHex(rawValue as FigmaColor);
@@ -259,20 +371,20 @@ async function main() {
         }
 
         manifestVariables.push({
-          collection:  collection.name,
-          mode:        defaultMode.name,
-          name:        v.name,
-          cssVariable: toCssVar(v.name),
+          collection:   collection.name,
+          mode:         defaultMode.name,
+          name:         v.name,
+          cssVariable:  toCssVar(v.name),
           resolvedType: v.resolvedType,
           value,
         });
-
-        variableCount++;
       }
     }
-  } else {
-    console.log('  ⚠  Variables API unavailable (may require a paid Figma plan).');
-    console.log('     Token names will need to be kept in sync manually.\n');
+
+    variablesSource = 'rest-api';
+  } else if (!pluginVariables) {
+    console.log('  ⚠  No variables found. Use --variables <file> to load from plugin export');
+    console.log('     (REST API variables endpoint requires a paid Figma plan)\n');
   }
 
   // ── Component sets ──────────────────────────────────────────────────────
@@ -280,10 +392,9 @@ async function main() {
   const manifestComponentSets: ManifestComponentSet[] = [];
 
   {
-    const components  = componentsRes?.meta?.components        ?? [];
-    const component_sets = componentSetsRes?.meta?.component_sets ?? [];
+    const components     = componentsRes?.meta?.components         ?? [];
+    const component_sets = componentSetsRes?.meta?.component_sets  ?? [];
 
-    // Group components by their parent component set id
     const bySetId: Record<string, FigmaComponent[]> = {};
     const standalone: FigmaComponent[] = [];
 
@@ -295,7 +406,6 @@ async function main() {
       }
     }
 
-    // Build component set entries
     for (const set of component_sets) {
       const members = bySetId[set.key] ?? [];
       const allProps: Record<string, Set<string>> = {};
@@ -320,13 +430,12 @@ async function main() {
       });
     }
 
-    // Standalone components (no variants)
     for (const c of standalone) {
       manifestComponentSets.push({
-        name:             c.name,
-        description:      c.description,
+        name:              c.name,
+        description:       c.description,
         variantProperties: {},
-        componentCount:   1,
+        componentCount:    1,
       });
     }
   }
@@ -347,6 +456,7 @@ async function main() {
       fileName:          fileMeta?.name ?? 'Unknown',
       syncedAt:          new Date().toISOString(),
       figmaLastModified: fileMeta?.lastModified ?? 'Unknown',
+      variablesSource,
     },
     variables:     manifestVariables,
     componentSets: manifestComponentSets,
@@ -360,8 +470,8 @@ async function main() {
 
   // ── Summary ─────────────────────────────────────────────────────────────
 
-  console.log(`  ✔  Synced from "${manifest.meta.fileName}"`);
-  console.log(`     Variables:      ${variableCount}`);
+  console.log(`\n  ✔  Synced from "${manifest.meta.fileName}"`);
+  console.log(`     Variables:      ${manifestVariables.length} (source: ${variablesSource})`);
   console.log(`     Component sets: ${manifestComponentSets.length}`);
   console.log(`     Styles:         ${manifestStyles.length}`);
   console.log(`\n  Written to design/figma-manifest.json`);

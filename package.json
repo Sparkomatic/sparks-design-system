@@ -3,10 +3,30 @@
   "version": "0.0.1",
   "private": true,
   "description": "Sparks Design System — token-driven React components, CLI-distributed like shadcn",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build:cli": "npm run build --workspace=packages/cli",
     "dev:cli": "npm run dev --workspace=packages/cli",
-    "sync-figma": "source ~/.zshrc 2>/dev/null && source ~/.nvm/nvm.sh && npx tsx scripts/sync-figma.ts"
+    "sync-figma": "source ~/.zshrc 2>/dev/null && source ~/.nvm/nvm.sh && npx tsx scripts/sync-figma.ts",
+    "storybook": "storybook dev -p 6006 2>&1 | tee storybook-server.log",
+    "build-storybook": "storybook build",
+    "logs": "node log-server.js"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "^8",
+    "@storybook/addon-essentials": "^8",
+    "@storybook/react": "^8",
+    "@storybook/react-vite": "^8",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "react": "^18",
+    "react-dom": "^18",
+    "storybook": "^8",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4"
   }
 }
